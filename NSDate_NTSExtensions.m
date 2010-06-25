@@ -45,9 +45,9 @@ static NSInteger standardizedHour = 12;
 	if (aDate == nil) return nil;
 	
 	NSDateComponents *comps = [[NSDate currentCalendar] components:NSYearCalendarUnit | NSMonthCalendarUnit | NSDayCalendarUnit fromDate:aDate];
-	[comps setHour:23];
-	[comps setMinute:59];
-	[comps setSecond:59];
+	[comps setHour:0];
+	[comps setMinute:0];
+	[comps setSecond:0];
 	return [[NSDate currentCalendar] dateFromComponents:comps];
 }
 
@@ -130,7 +130,7 @@ static NSInteger standardizedHour = 12;
 
 - (NSDate *)dateByAddingWeeks:(NSInteger)weeks {
 
-	return [[NSDate alloc] initWithTimeInterval:(NSTimeInterval)(weeks * 7) * dayTimeInterval sinceDate:self];
+	return [self dateByAddingDays:(weeks * 7)];
 }
 
 - (NSDate *)dateByAddingMonths:(NSInteger)months {
