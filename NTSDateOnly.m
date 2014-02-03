@@ -9,62 +9,116 @@
 //
 
 #import "NTSDateOnly.h"
-#import "NSDate_NTSExtensions.h"
 
-static NSTimeInterval dayTimeInterval = (60.0 * 60.0 * 24.0);
+#import "NSDate+NTSAdditions.h"
+#import "NTSYearMonth.h"
+
+
+NSString *const NTSDateOnlyCurrentCalendarKey = @"NTSDateOnlyCurrentCalendarKey";
 
 @implementation NTSDateOnly
 
-+ (NSCalendar *)currentCalendar {
-	static NSCalendar *currentCalendar = nil;
-	if (currentCalendar == nil) {
-		currentCalendar = [NSCalendar currentCalendar];
-		//[currentCalendar setTimeZone:[NSTimeZone timeZoneForSecondsFromGMT:0]];
-	}
-	return currentCalendar;
+@synthesize dateYMD;
+
++ (NSCalendar *)currentCalendar
+{
+    NSThread *currentThread = [NSThread currentThread];
+    if (currentThread == nil) { //ZOMBIE THREAD!!
+        return [NSCalendar currentCalendar];
+    }
+    
+    NSCalendar *cachedThreadCalendar = [currentThread.threadDictionary objectForKey:NTSDateOnlyCurrentCalendarKey];
+    if (cachedThreadCalendar == nil) {
+        cachedThreadCalendar = [NSCalendar currentCalendar];
+        [currentThread.threadDictionary setObject:cachedThreadCalendar forKey:NTSDateOnlyCurrentCalendarKey];
+    }
+    
+	return cachedThreadCalendar;
 }
 
-+ (NSCalendar *)standardizedCalendar {
-	static NSCalendar *standardizedCalendar = nil;
-	if (standardizedCalendar == nil) {
-		standardizedCalendar = [NSCalendar currentCalendar];
-		[standardizedCalendar setTimeZone:[NSTimeZone timeZoneForSecondsFromGMT:0]];
-	}
-	return standardizedCalendar;
-}
-
-+ (NTSDateOnly *)today {
++ (NTSDateOnly *)today
+{
 	return [[NTSDateOnly alloc] init];
 }
 
-+ (NTSDateOnly *)yesterday {
-	return [[NTSDateOnly alloc] initWithDate:[[NSDate alloc] initWithTimeInterval:-dayTimeInterval sinceDate:[NSDate date]]];
++ (NTSDateOnly *)tomorrow
+{
+	NTSDateOnly *tomorrow = [[self today] dateByAddingDays:1];
+    
+	return tomorrow;
 }
 
-+ (NTSDateOnly *)startOfMonthDate:(NTSDateOnly *)aDate {
-	if (aDate == nil) return nil;
-	
++ (NTSDateOnly *)yesterday
+{
+	NTSDateOnly *yesterday = [[self today] dateByAddingDays:-1];
+
+	return yesterday;
+}
+
++ (NTSDateOnly *)startOfWeekDate:(NTSDateOnly *)aDate
+{
+    return [NTSDateOnly dateOnlyWithDate:[NSDate startOfWeekDate:[aDate dateValue]]];
+}
+
++ (NTSDateOnly *)startOfMonthDate:(NTSDateOnly *)aDate
+{
+	if (aDate == nil) {
+		return nil;
+	}
+
 	return [[NTSDateOnly alloc] initWithYear:[aDate year] month:[aDate month] day:1];
 }
 
-+ (NTSDateOnly *)startOfYearDate:(NTSDateOnly *)aDate {
-	if (aDate == nil) return nil;
-	
++ (NTSDateOnly *)startOfYearDate:(NTSDateOnly *)aDate
+{
+	if (aDate == nil) {
+		return nil;
+	}
+
 	return [[NTSDateOnly alloc] initWithYear:[aDate year] month:1 day:1];
 }
 
-+ (NTSDateOnly *)startOfPreviousYearDate:(NTSDateOnly *)aDate {
-	if (aDate == nil) return nil;
-	
-	return [[NTSDateOnly alloc] initWithYear:[aDate year] - 1 month:1 day:1];
++ (NTSDateOnly *)startOfPreviousYearDate:(NTSDateOnly *)aDate
+{
+    if (aDate == nil) {
+        return nil;
+    }
+    
+    return [[NTSDateOnly alloc] initWithYear:[aDate year] - 1 month:1 day:1];
 }
 
-- (id)init {
++ (NTSDateOnly *)endOfWeekDate:(NTSDateOnly *)aDate
+{
+    return [NTSDateOnly dateOnlyWithDate:[NSDate endOfWeekDate:[aDate dateValue]]];
+}
+
++ (NTSDateOnly *)endOfMonthDate:(NTSDateOnly *)aDate;
+{
+    return [NTSDateOnly dateOnlyWithDate:[NSDate endOfMonthDate:[aDate dateValue]]];
+}
+
++ (NTSDateOnly *)endOfYearDate:(NTSDateOnly *)aDate;
+{
+    return [NTSDateOnly dateOnlyWithDate:[NSDate endOfYearDate:[aDate dateValue]]];
+}
+
++ (NTSDateOnly *)dateWithNumber:(NSNumber *)aNumber
+{
+	return [[NTSDateOnly alloc] initWithNumber:aNumber];
+}
+
++ (NTSDateOnly *)dateOnlyWithDate:(NSDate *)aDate
+{
+	return [[NTSDateOnly alloc] initWithDate:aDate];
+}
+
+- (id)init
+{
 	return [self initWithDate:[NSDate date]];
 }
 
-- (id)initWithDate:(NSDate *)aDate {
-	
+- (id)initWithDate:(NSDate *)aDate
+{
 	NSUInteger aDateYMD = 0;
 	if (aDate != nil) {
 		NSDateComponents *comps = [[NTSDateOnly currentCalendar] components:(NSYearCalendarUnit | NSMonthCalendarUnit | NSDayCalendarUnit) fromDate:aDate];
@@ -73,42 +127,50 @@ static NSTimeInterval dayTimeInterval = (60.0 * 60.0 * 24.0);
 	return [self initWithDateYMD:aDateYMD];
 }
 
-- (id)initWithYearMonth:(NTSYearMonth *)aYearMonth {
+- (id)initWithYearMonth:(NTSYearMonth *)aYearMonth
+{
 	return [self initWithYear:[aYearMonth year] month:[aYearMonth month] day:[aYearMonth day]];
 }
 
-- (id)initWithDay:(NSInteger)aDay {
+- (id)initWithDay:(NSInteger)aDay
+{
 	NSDateComponents *comps = [[NTSDateOnly currentCalendar] components:(NSYearCalendarUnit | NSMonthCalendarUnit) fromDate:[NSDate date]];
 	return [self initWithYear:[comps year] month:[comps month] day:aDay];
 }
 
-- (id)initWithMonth:(NSInteger)aMonth day:(NSInteger)aDay {
+- (id)initWithMonth:(NSInteger)aMonth day:(NSInteger)aDay
+{
 	NSDateComponents *comps = [[NTSDateOnly currentCalendar] components:(NSYearCalendarUnit | NSMonthCalendarUnit) fromDate:[NSDate date]];
 	return [self initWithYear:[comps year] month:aMonth day:aDay];
 }
 
-- (id)initWithYear:(NSInteger)aYear month:(NSInteger)aMonth {
+- (id)initWithYear:(NSInteger)aYear month:(NSInteger)aMonth
+{
 	NSDateComponents *comps = [[NTSDateOnly currentCalendar] components:(NSDayCalendarUnit) fromDate:[NSDate date]];
 	return [self initWithYear:aYear month:aMonth day:[comps day]];
 }
 
-- (id)initWithYear:(NSInteger)aYear month:(NSInteger)aMonth day:(NSInteger)aDay {
+- (id)initWithYear:(NSInteger)aYear month:(NSInteger)aMonth day:(NSInteger)aDay
+{
 	NSDateComponents *comps = [[NSDateComponents alloc] init];
 	[comps setDay:aDay];
 	[comps setMonth:aMonth];
 	[comps setYear:aYear];
 	NSDate *normalizedDate = [[NTSDateOnly currentCalendar] dateFromComponents:comps];
+	comps = nil;
 	comps = [[NTSDateOnly currentCalendar] components:(NSYearCalendarUnit | NSMonthCalendarUnit | NSDayCalendarUnit) fromDate:normalizedDate];
 	NSUInteger aDateYMD = ([comps year] * 10000) + ([comps month] * 100) + [comps day];
-	
+
 	return [self initWithDateYMD:aDateYMD];
 }
 
-- (id)initWithNumber:(NSNumber *)aNumber {
+- (id)initWithNumber:(NSNumber *)aNumber
+{
 	return [self initWithDateYMD:[aNumber unsignedIntValue]];
 }
 
-- (id)initWithDateYMD:(NSUInteger)aDateYMD {
+- (id)initWithDateYMD:(NSUInteger)aDateYMD
+{
 	self = [super init];
 	if (self != nil) {
 		dateYMD = aDateYMD;
@@ -116,107 +178,183 @@ static NSTimeInterval dayTimeInterval = (60.0 * 60.0 * 24.0);
 	return self;
 }
 
-- (const char *)objCType {
+- (const char *)objCType
+{
 	return @encode(unsigned int);
 }
 
-- (unsigned int)unsignedIntValue {
+- (unsigned int)unsignedIntValue
+{
+	return (unsigned int)dateYMD;
+}
+
+- (unsigned int)intValue
+{
+	return (unsigned int)dateYMD;
+}
+
+- (long long)longLongValue
+{
 	return dateYMD;
 }
 
-- (unsigned int)intValue {
-	return dateYMD;
+- (const char *)UTF8String
+{
+	return [[NSString stringWithFormat:@"%lu", (unsigned long)dateYMD] UTF8String];
 }
 
-- (long long)longLongValue {
-	return dateYMD;
+- (NSString *)description
+{
+	return [NSString stringWithFormat:@"%lu", (unsigned long)dateYMD];
 }
 
-- (const char *)UTF8String {
-	return [[NSString stringWithFormat:@"%u", dateYMD] UTF8String];
+- (NSString *)debugDescription
+{
+	return [NSString stringWithFormat:@"{\nyear: %ld\nmonth: %ld\nday: %ld\n}", (long)[self year], (long)[self month], (long)[self day]];
 }
 
-- (NSString *)description {
-	return [NSString stringWithFormat:@"%u", dateYMD];
-}
-
-- (NSString *)debugDescription {
-	return [NSString stringWithFormat:@"{\nyear: %d\nmonth: %d\nday: %d\n}", [self year], [self month], [self day]];
-}
-
-- (NSInteger)year {
+- (NSInteger)year
+{
 	return dateYMD / 10000;
 }
 
-- (NSInteger)month {
+- (NSInteger)month
+{
 	return (dateYMD / 100) % 100;
 }
 
-- (NSInteger)day {
+- (NSInteger)day
+{
 	return dateYMD % 100;
 }
 
-- (NSDate *)dateValue {
-	if ([self intValue] == 0)
+- (NSInteger)dayOfTheWeek
+{
+	NSDateComponents *comps = [[NTSDateOnly currentCalendar] components:NSWeekdayCalendarUnit fromDate:[self dateValue]];
+	return [comps weekday]; 
+}
+
+- (NSDate *)dateValue
+{
+	if ([self unsignedIntValue] == 0) {
 		return nil;
+	}
 
 	NSDateComponents *comps = [[NSDateComponents alloc] init];
 	[comps setDay:[self day]];
 	[comps setMonth:[self month]];
 	[comps setYear:[self year]];
-	return [[NTSDateOnly currentCalendar] dateFromComponents:comps];
+	NSDate *date = [[NTSDateOnly currentCalendar] dateFromComponents:comps];
+
+	return date;
 }
 
-- (NSNumber *)numberValue {
+- (NSNumber *)numberValue
+{
 	return [NSNumber numberWithUnsignedLong:dateYMD];
 }
 
-- (BOOL)isEqualTo:(NTSDateOnly *)aDate {
+- (NSComparisonResult)compare:(NTSDateOnly *)other
+{
+    if ([self dateYMD] < [other dateYMD]) {
+        return NSOrderedAscending;
+    } else if ([self dateYMD] > [other dateYMD]) {
+        return NSOrderedDescending;
+    }
+    
+    return NSOrderedSame;
+}
+
+- (BOOL)isEqualTo:(NTSDateOnly *)aDate
+{
 	return (self.dateYMD == aDate.dateYMD) ? YES : NO;
 }
 
-- (BOOL)isLessThan:(NTSDateOnly *)aDate {
+- (BOOL)isLessThan:(NTSDateOnly *)aDate
+{
 	return (self.dateYMD < aDate.dateYMD) ? YES : NO;
 }
 
-- (BOOL)isLessThanOrEqualTo:(NTSDateOnly *)aDate {
+- (BOOL)isLessThanOrEqualTo:(NTSDateOnly *)aDate
+{
 	return (self.dateYMD <= aDate.dateYMD) ? YES : NO;
 }
 
-- (BOOL)isGreaterThan:(NTSDateOnly *)aDate {
+- (BOOL)isGreaterThan:(NTSDateOnly *)aDate
+{
 	return (self.dateYMD > aDate.dateYMD) ? YES : NO;
 }
 
-- (BOOL)isGreaterThanOrEqualTo:(NTSDateOnly *)aDate {
+- (BOOL)isGreaterThanOrEqualTo:(NTSDateOnly *)aDate
+{
 	return (self.dateYMD >= aDate.dateYMD) ? YES : NO;
 }
 
-- (NTSDateOnly *)dateByAddingDays:(NSInteger)days {
-	
+- (NTSDateOnly *)dateByAddingDays:(NSInteger)days
+{
 	NSDateComponents *comps = [[NSDateComponents alloc] init];
 	[comps setDay:days];
-	return [[NTSDateOnly alloc] initWithDate:[[NSDate currentCalendar] dateByAddingComponents:comps toDate:[self dateValue] options:0]];
+	NTSDateOnly *date = [[NTSDateOnly alloc] initWithDate:[[NSDate currentCalendar] dateByAddingComponents:comps toDate:[self dateValue] options:0]];
+	comps = nil;
+	return date;
 }
 
-- (NTSDateOnly *)dateByAddingWeeks:(NSInteger)weeks {
-
+- (NTSDateOnly *)dateByAddingWeeks:(NSInteger)weeks
+{
 	return [self dateByAddingDays:(weeks * 7)];
 }
 
-- (NTSDateOnly *)dateByAddingMonths:(NSInteger)months {
-	
+- (NTSDateOnly *)dateByAddingMonths:(NSInteger)months
+{
 	NSDateComponents *comps = [[NSDateComponents alloc] init];
 	[comps setMonth:months];
-	return [[NTSDateOnly alloc] initWithDate:[[NSDate currentCalendar] dateByAddingComponents:comps toDate:[self dateValue] options:0]];
+	NTSDateOnly *date = [[NTSDateOnly alloc] initWithDate:[[NSDate currentCalendar] dateByAddingComponents:comps toDate:[self dateValue] options:0]];
+	comps = nil;
+	return date;
 }
 
-- (NTSDateOnly *)dateByAddingYears:(NSInteger)years {
-	
+- (NTSDateOnly *)dateByAddingYears:(NSInteger)years
+{
 	NSDateComponents *comps = [[NSDateComponents alloc] init];
 	[comps setYear:years];
-	return [[NTSDateOnly alloc] initWithDate:[[NSDate currentCalendar] dateByAddingComponents:comps toDate:[self dateValue] options:0]];
+	NTSDateOnly *date = [[NTSDateOnly alloc] initWithDate:[[NSDate currentCalendar] dateByAddingComponents:comps toDate:[self dateValue] options:0]];
+	comps = nil;
+	return date;
 }
 
-@synthesize dateYMD;
+- (NSInteger)timeIntervalInDaysSinceDate:(NTSDateOnly *)referenceDate
+{
+    return [[self dateValue] timeIntervalInDaysSinceDate:[referenceDate dateValue]];
+}
+
+- (NSString *)label
+{
+#ifdef __IPHONE_OS_VERSION_MIN_REQUIRED
+	return [NSString stringWithFormat:@"%@", [self dateValue]];
+#elif defined(__MAC_OS_X_VERSION_MIN_REQUIRED)
+	return [NSString stringWithFormat:@"%@", [[self dateValue] descriptionWithCalendarFormat:@"%d %b %Y" timeZone:nil locale:[[NSUserDefaults standardUserDefaults] dictionaryRepresentation]]];
+#endif
+}
+
+- (id)copyWithZone:(NSZone *)zone
+{
+    return [[NTSDateOnly allocWithZone:zone] initWithDateYMD:self.dateYMD];
+}
+
+- (BOOL)isEqual:(id)object
+{
+    if ([object isKindOfClass:[NTSDateOnly class]] == NO) {
+        return NO;
+    }
+    
+    NTSDateOnly *dateOnlyObject = (NTSDateOnly *)object;
+    
+    return (dateOnlyObject.year == self.year && dateOnlyObject.month == self.month && dateOnlyObject.day == self.day);
+}
+
+- (NSUInteger)hash
+{
+    return [self unsignedIntValue];
+}
 
 @end

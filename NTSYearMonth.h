@@ -8,11 +8,9 @@
 //  Simply include Kevin Hoctor in your credits if you utilize it.
 //
 
-#import <Cocoa/Cocoa.h>
-
 @class NTSDateOnly;
 
-@interface NTSYearMonth : NSObject {
+@interface NTSYearMonth : NSObject <NSCopying> {
 	NSInteger year;
 	NSInteger month;
 	NSInteger day;
@@ -44,8 +42,10 @@
 - (NTSDateOnly *)firstHalfEndDate;
 - (NSString *)labelWithFirstHalfDate:(NTSDateOnly *)aDate;
 
-@property(assign) NSInteger year;
-@property(assign) NSInteger month;
-@property(assign) NSInteger day;
+- (NSComparisonResult)compare:(NTSYearMonth *)other;
+
+@property (assign) NSInteger year;
+@property (assign) NSInteger month;
+@property (assign) NSInteger day;
 
 @end

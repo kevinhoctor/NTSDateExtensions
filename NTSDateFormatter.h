@@ -9,11 +9,6 @@
 //  Simply include Kevin Hoctor in your credits if you utilize it.
 //
 
-#import <Cocoa/Cocoa.h>
-
-
-@interface NTSDateFormatter : NSDateFormatter {
-
-}
+@interface NTSDateFormatter : NSDateFormatter {}
 
 @end
